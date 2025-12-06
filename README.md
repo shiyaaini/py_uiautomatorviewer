@@ -1,6 +1,5 @@
 # Python UIAutomatorViewer（增强版）
 
-[![Star History Chart](https://api.star-history.com/svg?repos=shiyaaini/py_uiautomatorviewer&type=Date)](https://star-history.com/#shiyaaini/py_uiautomatorviewer&Date)
 
 一个使用 **Python + PyQt5** 实现的桌面版 UIAutomator Viewer，支持：
 
