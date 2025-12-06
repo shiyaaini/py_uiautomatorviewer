@@ -1,0 +1,5 @@
+.idea
+*.bak
+*.zip
+
+sync.ffs_db

@@ -1,0 +1,4 @@
+# Python UIAutomatorViewer dependencies
+# Tested with Python 3.8+
+
+PyQt5>=5.15,<6

@@ -1,0 +1,1 @@
+try { importClass(android.provider.Settings); var mode = Settings.System.getInt(context.getContentResolver(), Settings.System.SCREEN_BRIGHTNESS_MODE); if (mode == 1) { Settings.System.putInt(context.getContentResolver(), Settings.System.SCREEN_BRIGHTNESS_MODE, 0); } var b = device.getBrightness(); device.setBrightness(Math.min(255, b + 20)); } catch(e) { console.error(e); }

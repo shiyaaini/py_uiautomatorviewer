@@ -1,0 +1,1 @@
+device.setMusicVolume(device.getMusicVolume() - 1);

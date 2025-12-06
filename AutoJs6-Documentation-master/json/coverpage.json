@@ -1,0 +1,29 @@
+{
+  "source": "..\\api\\coverpage.md",
+  "desc": [
+    {
+      "type": "paragraph",
+      "text": "<img src=\"images/logo.png\" width=\"136\" height=\"136\" alt=\"logo\"/>"
+    },
+    {
+      "type": "space"
+    }
+  ],
+  "methods": [
+    {
+      "textRaw": "[AutoJs6](http://project.autojs6.com)",
+      "type": "method",
+      "name": "[AutoJs6]",
+      "desc": "<p>安卓平台 JavaScript 自动化工具</p>\n<p><a href=\"http://download.autojs6.com\">下载应用</a>\n<a href=\"/overview\">阅读文档</a></p>\n",
+      "signatures": [
+        {
+          "params": [
+            {
+              "name": "http://project.autojs6.com"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

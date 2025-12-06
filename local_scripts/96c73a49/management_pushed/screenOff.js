@@ -1,0 +1,1 @@
+if (typeof $lock !== "undefined" && $lock.lock) { $lock.lock(); } else { try { runtime.accessibilityBridge.getService().performGlobalAction(8); } catch(e) { console.error(e); } }

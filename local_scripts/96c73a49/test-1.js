@@ -1,0 +1,1 @@
+device.bluetooth.enable();
