@@ -1,5 +1,7 @@
 # Python UIAutomatorViewer（增强版）
 
+[![Star History Chart](https://api.star-history.com/svg?repos=shiyaaini/py_uiautomatorviewer&type=Date)](https://star-history.com/#shiyaaini/py_uiautomatorviewer&Date)
+
 一个使用 **Python + PyQt5** 实现的桌面版 UIAutomator Viewer，支持：
 
 - 基于 `adb` 与 `uiautomator dump` 的传统 UI 层级树查看
@@ -210,15 +212,4 @@ python main.py
   - 查看控制台日志（`print` 输出）
 
 ---
-
-## License
-
-根据你实际的开源协议补充，例如：
-
-```text
-MIT License
-```
-
-如无特别说明，默认可选择 MIT / Apache-2.0 等常见开源协议。
-
-仓库地址：https://github.com/shiyaaini/py_uiautomatorviewer
+[![Star History Chart](https://api.star-history.com/svg?repos=shiyaaini/py_uiautomatorviewer&type=Date)](https://star-history.com/#shiyaaini/py_uiautomatorviewer&Date)
