@@ -1,5 +1,6 @@
 # Python UIAutomatorViewer（增强版）
 
+
 一个使用 **Python + PyQt5** 实现的桌面版 UIAutomator Viewer，支持：
 
 - 基于 `adb` 与 `uiautomator dump` 的传统 UI 层级树查看
@@ -8,7 +9,7 @@
 - 生成 AutoJs6 选择器与操作代码片段
 - 内置 AutoJs6 脚本编辑器与文档浏览
 
-> 运行环境：**Python 3.8 及以上**
+> 运行环境：**Python 3.7 及以上**
 
 ---
 
@@ -210,15 +211,14 @@ python main.py
   - 查看控制台日志（`print` 输出）
 
 ---
+### 效果演示
+#### 获取控件界面
+<img src="./static/one.png">
 
-## License
+#### 生成autojs代码界面
+<img src="./static/two.png">
 
-根据你实际的开源协议补充，例如：
-
-```text
-MIT License
-```
-
-如无特别说明，默认可选择 MIT / Apache-2.0 等常见开源协议。
-
-仓库地址：https://github.com/shiyaaini/py_uiautomatorviewer
+#### Android 代码编辑界面
+<img src="./static/three.png">
+---
+[![Star History Chart](https://api.star-history.com/svg?repos=shiyaaini/py_uiautomatorviewer&type=Date)](https://star-history.com/#shiyaaini/py_uiautomatorviewer&Date)
