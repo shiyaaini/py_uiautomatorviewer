@@ -211,6 +211,7 @@ python main.py
   - 查看控制台日志（`print` 输出）
 
 ---
+<<<<<<< HEAD
 ### 效果演示
 #### 获取控件界面
 <img src="./static/one.png">
@@ -221,4 +222,5 @@ python main.py
 #### Android 代码编辑界面
 <img src="./static/three.png">
 ---
+
 [![Star History Chart](https://api.star-history.com/svg?repos=shiyaaini/py_uiautomatorviewer&type=Date)](https://star-history.com/#shiyaaini/py_uiautomatorviewer&Date)
