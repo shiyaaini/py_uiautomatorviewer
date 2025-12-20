@@ -145,6 +145,13 @@ class AdbClient:
                 f"原始 adb 输出: {message}"
             )
 
+        # 删除设备上的旧 JSON 文件，防止使用旧数据
+        self._run(["shell", "rm", "-f", json_remote_path])
+        
+        # 删除本地的旧 JSON 文件
+        if os.path.exists(json_local_path):
+            os.remove(json_local_path)
+
         self._run_autojs_ui_tree_script(remote_script_path=remote_script_path)
 
         for _ in range(30):
@@ -163,6 +170,9 @@ class AdbClient:
         if pull_result.returncode != 0:
             message = pull_result.stderr.strip() or pull_result.stdout.strip()
             raise RuntimeError(f"拉取 AutoJs UI 树 JSON 失败: {message}")
+
+        # 删除设备上的 JSON 文件，防止下次使用旧数据
+        self._run(["shell", "rm", json_remote_path])
 
         return {"screenshot": screenshot_path, "autojs_json": json_local_path}
 

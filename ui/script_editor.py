@@ -3,7 +3,7 @@ from typing import Optional, Dict
 from PyQt5.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QTreeWidget, QTreeWidgetItem, 
     QPlainTextEdit, QToolBar, QMessageBox, QSplitter, QFileDialog, QApplication,
-    QCompleter, QListView, QTextEdit
+    QCompleter, QListView, QTextEdit, QInputDialog, QMenu, QAction
 )
 from PyQt5.QtCore import Qt, QEvent, QStringListModel, QRect, QSize
 from PyQt5.QtGui import QFont, QTextCursor, QStandardItemModel, QStandardItem, QPainter, QColor, QTextFormat
@@ -388,32 +388,44 @@ class ScriptEditorWindow(QMainWindow):
         return "default"
 
     def _init_ui(self):
-        self.setWindowTitle("Script Editor")
+        self.setWindowTitle("脚本编辑器")
         self.resize(1000, 700)
         
         toolbar = QToolBar()
         self.addToolBar(toolbar)
         
-        sync_action = toolbar.addAction("Sync from Android")
+        new_file_action = toolbar.addAction("新建脚本")
+        new_file_action.triggered.connect(self.create_new_script)
+        
+        new_folder_action = toolbar.addAction("新建文件夹")
+        new_folder_action.triggered.connect(self.create_new_folder)
+        
+        toolbar.addSeparator()
+        
+        sync_action = toolbar.addAction("从设备同步")
         sync_action.triggered.connect(self.sync_from_android)
         
-        push_action = toolbar.addAction("Push to Android")
+        push_action = toolbar.addAction("推送到设备")
         push_action.triggered.connect(self.push_current_to_android)
         
-        save_action = toolbar.addAction("Save (Local)")
+        save_action = toolbar.addAction("保存")
         save_action.triggered.connect(self.save_current_file)
         
-        run_action = toolbar.addAction("Run on Device")
+        run_action = toolbar.addAction("运行")
         run_action.triggered.connect(self.run_script)
         
-        refresh_action = toolbar.addAction("Refresh Local Tree")
+        toolbar.addSeparator()
+        
+        refresh_action = toolbar.addAction("刷新")
         refresh_action.triggered.connect(self.refresh_local_file_tree)
 
         splitter = QSplitter(Qt.Horizontal)
         
         self.tree_widget = QTreeWidget()
-        self.tree_widget.setHeaderLabel("Scripts")
+        self.tree_widget.setHeaderLabel("脚本列表")
         self.tree_widget.itemClicked.connect(self.on_file_clicked)
+        self.tree_widget.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.tree_widget.customContextMenuRequested.connect(self.show_tree_context_menu)
         splitter.addWidget(self.tree_widget)
         
         self.editor = CodeEditor() # Use CodeEditor instead of SmartEditor
@@ -424,11 +436,175 @@ class ScriptEditorWindow(QMainWindow):
         
         self.setCentralWidget(splitter)
 
+    def create_new_script(self):
+        """创建新脚本文件"""
+        name, ok = QInputDialog.getText(self, "新建脚本", "请输入脚本名称（不含扩展名）:")
+        if not ok or not name.strip():
+            return
+        
+        name = name.strip()
+        if not name.endswith(".js"):
+            name += ".js"
+        
+        # 如果当前选中了文件夹，在该文件夹下创建
+        current_item = self.tree_widget.currentItem()
+        parent_path = ""
+        
+        if current_item:
+            rel_path = current_item.data(0, Qt.UserRole)
+            if rel_path:
+                # 是文件，使用其父目录
+                parent_path = os.path.dirname(rel_path)
+            else:
+                # 是文件夹，构建路径
+                parent_path = self._get_item_path(current_item)
+        
+        file_rel_path = os.path.join(parent_path, name) if parent_path else name
+        file_full_path = os.path.join(self.local_script_root, file_rel_path)
+        
+        if os.path.exists(file_full_path):
+            QMessageBox.warning(self, "警告", "文件已存在！")
+            return
+        
+        try:
+            os.makedirs(os.path.dirname(file_full_path), exist_ok=True)
+            with open(file_full_path, "w", encoding="utf-8") as f:
+                f.write("// AutoJs6 脚本\n\n")
+            
+            self.refresh_local_file_tree()
+            self.current_relative_path = file_rel_path
+            self.editor.setPlainText("// AutoJs6 脚本\n\n")
+            self.setWindowTitle(f"脚本编辑器 - {file_rel_path}")
+            self.statusBar().showMessage(f"已创建: {file_rel_path}", 3000)
+        except Exception as e:
+            QMessageBox.critical(self, "错误", f"创建文件失败: {str(e)}")
+    
+    def create_new_folder(self):
+        """创建新文件夹"""
+        name, ok = QInputDialog.getText(self, "新建文件夹", "请输入文件夹名称:")
+        if not ok or not name.strip():
+            return
+        
+        name = name.strip()
+        
+        # 如果当前选中了项目，在该位置创建
+        current_item = self.tree_widget.currentItem()
+        parent_path = ""
+        
+        if current_item:
+            rel_path = current_item.data(0, Qt.UserRole)
+            if rel_path:
+                # 是文件，使用其父目录
+                parent_path = os.path.dirname(rel_path)
+            else:
+                # 是文件夹，构建路径
+                parent_path = self._get_item_path(current_item)
+        
+        folder_rel_path = os.path.join(parent_path, name) if parent_path else name
+        folder_full_path = os.path.join(self.local_script_root, folder_rel_path)
+        
+        if os.path.exists(folder_full_path):
+            QMessageBox.warning(self, "警告", "文件夹已存在！")
+            return
+        
+        try:
+            os.makedirs(folder_full_path, exist_ok=True)
+            self.refresh_local_file_tree()
+            self.statusBar().showMessage(f"已创建文件夹: {folder_rel_path}", 3000)
+        except Exception as e:
+            QMessageBox.critical(self, "错误", f"创建文件夹失败: {str(e)}")
+    
+    def _get_item_path(self, item):
+        """获取树节点的完整路径"""
+        parts = []
+        current = item
+        while current:
+            text = current.text(0)
+            if text:
+                parts.insert(0, text)
+            current = current.parent()
+        return os.path.join(*parts) if parts else ""
+    
+    def show_tree_context_menu(self, position):
+        """显示右键菜单"""
+        item = self.tree_widget.itemAt(position)
+        
+        menu = QMenu()
+        
+        new_script_action = menu.addAction("新建脚本")
+        new_script_action.triggered.connect(self.create_new_script)
+        
+        new_folder_action = menu.addAction("新建文件夹")
+        new_folder_action.triggered.connect(self.create_new_folder)
+        
+        if item:
+            menu.addSeparator()
+            
+            rel_path = item.data(0, Qt.UserRole)
+            if rel_path:  # 是文件
+                delete_action = menu.addAction("删除文件")
+                delete_action.triggered.connect(lambda: self.delete_file(rel_path))
+            else:  # 是文件夹
+                delete_action = menu.addAction("删除文件夹")
+                delete_action.triggered.connect(lambda: self.delete_folder(item))
+        
+        menu.exec_(self.tree_widget.viewport().mapToGlobal(position))
+    
+    def delete_file(self, rel_path):
+        """删除文件"""
+        reply = QMessageBox.question(
+            self, "确认删除", 
+            f"确定要删除文件 {rel_path} 吗？",
+            QMessageBox.Yes | QMessageBox.No
+        )
+        
+        if reply == QMessageBox.Yes:
+            try:
+                full_path = os.path.join(self.local_script_root, rel_path)
+                os.remove(full_path)
+                
+                if self.current_relative_path == rel_path:
+                    self.current_relative_path = None
+                    self.editor.clear()
+                    self.setWindowTitle("脚本编辑器")
+                
+                self.refresh_local_file_tree()
+                self.statusBar().showMessage(f"已删除: {rel_path}", 3000)
+            except Exception as e:
+                QMessageBox.critical(self, "错误", f"删除失败: {str(e)}")
+    
+    def delete_folder(self, item):
+        """删除文件夹"""
+        folder_path = self._get_item_path(item)
+        
+        reply = QMessageBox.question(
+            self, "确认删除", 
+            f"确定要删除文件夹 {folder_path} 及其所有内容吗？",
+            QMessageBox.Yes | QMessageBox.No
+        )
+        
+        if reply == QMessageBox.Yes:
+            try:
+                import shutil
+                full_path = os.path.join(self.local_script_root, folder_path)
+                shutil.rmtree(full_path)
+                
+                # 如果当前打开的文件在被删除的文件夹中，清空编辑器
+                if self.current_relative_path and self.current_relative_path.startswith(folder_path):
+                    self.current_relative_path = None
+                    self.editor.clear()
+                    self.setWindowTitle("脚本编辑器")
+                
+                self.refresh_local_file_tree()
+                self.statusBar().showMessage(f"已删除文件夹: {folder_path}", 3000)
+            except Exception as e:
+                QMessageBox.critical(self, "错误", f"删除文件夹失败: {str(e)}")
+
     def sync_from_android(self):
         try:
             remote_files = self.adb_client.list_files(self.remote_script_root)
             if not remote_files:
-                QMessageBox.information(self, "Info", "No files found or failed to list files.")
+                QMessageBox.information(self, "提示", "未找到文件或列表失败")
                 return
 
             count = 0
@@ -446,15 +622,15 @@ class ScriptEditorWindow(QMainWindow):
                 if self.adb_client.pull_file(remote_file, local_path):
                     count += 1
             
-            QMessageBox.information(self, "Success", f"Synced {count} files from Android.")
+            QMessageBox.information(self, "成功", f"已从设备同步 {count} 个文件")
             self.refresh_local_file_tree()
             
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Sync failed: {str(e)}")
+            QMessageBox.critical(self, "错误", f"同步失败: {str(e)}")
 
     def push_current_to_android(self):
         if not self.current_relative_path:
-            QMessageBox.warning(self, "Warning", "No file selected.")
+            QMessageBox.warning(self, "警告", "未选择文件")
             return
         
         self.save_current_file()
@@ -465,15 +641,15 @@ class ScriptEditorWindow(QMainWindow):
         
         try:
             if self.adb_client.push_file(local_path, remote_path):
-                QMessageBox.information(self, "Success", f"Pushed {remote_rel_path} to Android.")
+                QMessageBox.information(self, "成功", f"已推送 {remote_rel_path} 到设备")
             else:
-                QMessageBox.warning(self, "Failure", "Failed to push file.")
+                QMessageBox.warning(self, "失败", "推送文件失败")
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Push failed: {str(e)}")
+            QMessageBox.critical(self, "错误", f"推送失败: {str(e)}")
 
     def run_script(self):
         if not self.current_relative_path:
-            QMessageBox.warning(self, "Warning", "No file selected.")
+            QMessageBox.warning(self, "警告", "未选择文件")
             return
             
         # 1. Push the file first
@@ -503,16 +679,14 @@ class ScriptEditorWindow(QMainWindow):
             if result.returncode == 0:
                 # Check output for error
                 if "Error" in result.stderr or "Error" in result.stdout:
-                     # Try alternative package name if it fails? 
-                     # But for now just show info
-                     QMessageBox.warning(self, "Run Result", f"Command executed with potential error:\n{result.stderr}\n{result.stdout}")
+                     QMessageBox.warning(self, "运行结果", f"命令执行可能有错误:\n{result.stderr}\n{result.stdout}")
                 else:
-                     self.statusBar().showMessage(f"Running: {remote_rel_path}", 3000)
+                     self.statusBar().showMessage(f"正在运行: {remote_rel_path}", 3000)
             else:
-                QMessageBox.warning(self, "Run Failed", f"ADB Command Failed:\n{result.stderr}")
+                QMessageBox.warning(self, "运行失败", f"ADB 命令失败:\n{result.stderr}")
                 
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Run execution failed: {str(e)}")
+            QMessageBox.critical(self, "错误", f"运行失败: {str(e)}")
 
     def save_current_file(self):
         if not self.current_relative_path:
@@ -522,9 +696,9 @@ class ScriptEditorWindow(QMainWindow):
         try:
             with open(local_path, "w", encoding="utf-8") as f:
                 f.write(self.editor.toPlainText())
-            self.statusBar().showMessage(f"Saved: {self.current_relative_path}", 3000)
+            self.statusBar().showMessage(f"已保存: {self.current_relative_path}", 3000)
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Save failed: {str(e)}")
+            QMessageBox.critical(self, "错误", f"保存失败: {str(e)}")
 
     def refresh_local_file_tree(self):
         self.tree_widget.clear()
@@ -573,6 +747,6 @@ class ScriptEditorWindow(QMainWindow):
                 with open(full_path, "r", encoding="utf-8") as f:
                     content = f.read()
                 self.editor.setPlainText(content)
-                self.setWindowTitle(f"Script Editor - {rel_path}")
+                self.setWindowTitle(f"脚本编辑器 - {rel_path}")
             except Exception as e:
-                QMessageBox.warning(self, "Error", f"Could not read file: {str(e)}")
+                QMessageBox.warning(self, "错误", f"无法读取文件: {str(e)}")
