@@ -1,4 +1,5 @@
 import os
+import json
 from typing import Optional, Set
 
 from PyQt5.QtCore import Qt, QModelIndex, QSortFilterProxyModel, QUrl
@@ -528,12 +529,15 @@ class MainWindow(QMainWindow):
         menu = QMenu(self)
         action_generate_code = menu.addAction("生成 AutoJs6 代码...")
         action_generate_exists_fn = menu.addAction("生成判断控件存在的函数")
+        action_copy_json = menu.addAction("复制 JSON")
         global_pos = self.prop_table.viewport().mapToGlobal(pos)
         action = menu.exec_(global_pos)
         if action == action_generate_code:
             self.generate_autojs_code_for_current_node()
         elif action == action_generate_exists_fn:
             self.generate_exists_function_for_current_node()
+        elif action == action_copy_json:
+            self.copy_current_node_json()
 
     def generate_exists_function_for_current_node(self):
         if not self.current_node:
@@ -828,3 +832,33 @@ class MainWindow(QMainWindow):
         clipboard = QApplication.clipboard()
         clipboard.setText(text)
         QMessageBox.information(self, "已复制", "已复制到剪贴板")
+
+    def copy_current_node_json(self):
+        if not self.current_node:
+            return
+        node = self.current_node
+        x, y, w, h = node.rect
+        data = {
+            "text": node.text,
+            "id": node.resource_id.split(":id/")[-1] if ":id/" in node.resource_id else node.resource_id,
+            "fullid": node.resource_id,
+            "class": node.class_name,
+            "package": node.package,
+            "desc": node.content_desc,
+            "checkable": str(node.checkable).lower() == "true",
+            "checked": str(node.checked).lower() == "true",
+            "clickable": str(node.clickable).lower() == "true",
+            "enabled": str(node.enabled).lower() == "true",
+            "focusable": str(node.focusable).lower() == "true",
+            "focused": str(node.focused).lower() == "true",
+            "scrollable": str(node.scrollable).lower() == "true",
+            "long_clickable": str(node.long_clickable).lower() == "true",
+            "password": str(node.password).lower() == "true",
+            "selected": str(node.selected).lower() == "true",
+            "bounds": node.bounds_str,
+            "rect": {"x": x, "y": y, "w": w, "h": h},
+            "center": {"x": x + w // 2, "y": y + h // 2},
+            "index": int(node.index),
+        }
+        text = json.dumps(data, ensure_ascii=False, indent=2)
+        self._copy_to_clipboard(text)

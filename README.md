@@ -221,7 +221,6 @@ python main.py
 
 #### Android 代码编辑界面
 <img src="./static/three.png">
-
 ---
 
 [![Star History Chart](https://api.star-history.com/svg?repos=shiyaaini/py_uiautomatorviewer&type=Date)](https://star-history.com/#shiyaaini/py_uiautomatorviewer&Date)
